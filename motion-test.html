@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>WalkTap Motion Sensor Test</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #17243b;
+    }
+
+    main {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 { font-size: 24px; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    button, select {
+      width: 100%;
+      padding: 14px;
+      margin: 6px 0;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+
+    button {
+      border: 0;
+      color: white;
+      background: #2563eb;
+    }
+
+    button:disabled {
+      background: #94a3b8;
+    }
+
+    select {
+      background: white;
+      border: 1px solid #cbd5e1;
+    }
+
+    .reading {
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    #status {
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>WalkTap Motion Sensor Test</h1>
+  <p class="muted">
+    CSE 518 — Accelerometer and Gyroscope Calibration
+  </p>
+
+  <div class="card">
+    <button id="enableBtn">Enable Motion Sensors</button>
+    <p id="status" role="status">
+      Waiting for sensor permission.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Live Motion Readings</h3>
+    <p>Acceleration magnitude</p>
+    <div class="reading" id="accel">--</div>
+    <p class="muted">m/s² (gravity excluded)</p>
+
+    <p>Rotation magnitude</p>
+    <div class="reading" id="rotation">--</div>
+    <p class="muted">degrees/second</p>
+
+    <p>Acceleration RMS (2 seconds)</p>
+    <div class="reading" id="rms">--</div>
+    <p class="muted">
+      Root mean square of acceleration magnitude
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Calibration Recording</h3>
+
+    <label for="activity">Actual activity</label>
+    <select id="activity">
+      <option value="sitting">Sitting</option>
+      <option value="walking">Walking</option>
+    </select>
+
+    <button id="recordBtn" disabled>
+      Record 15 Seconds
+    </button>
+
+    <p id="recordStatus" role="status">
+      No recording started.
+    </p>
+
+    <button id="downloadBtn" disabled>
+      Download Sensor CSV
+    </button>
+  </div>
+</main>
+
+<script>
+const enableBtn = document.getElementById("enableBtn");
+const recordBtn = document.getElementById("recordBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+
+const statusEl = document.getElementById("status");
+const recordStatus = document.getElementById("recordStatus");
+
+const accelEl = document.getElementById("accel");
+const rotationEl = document.getElementById("rotation");
+const rmsEl = document.getElementById("rms");
+
+const activityEl = document.getElementById("activity");
+
+let sensorEnabled = false;
+let recording = false;
+let samples = [];
+let recent = [];
+let recordingStart = 0;
+let recordingTimer = null;
+let lastEventTime = 0;
+
+const RECORD_MS = 15000;
+const WINDOW_MS = 2000;
+
+function magnitude(x, y, z) {
+  return Math.sqrt(x*x + y*y + z*z);
+}
+
+function downloadCSV(rows, filename) {
+  if (!rows.length) return;
+
+  const columns = [
+    "time_ms",
+    "activity",
+    "accel_x",
+    "accel_y",
+    "accel_z",
+    "accel_magnitude",
+    "rotation_alpha",
+    "rotation_beta",
+    "rotation_gamma",
+    "rotation_magnitude",
+    "accel_rms_2s"
+  ];
+
+  const csv = [
+    columns.join(","),
+    ...rows.map(row =>
+      columns.map(key => row[key]).join(",")
+    )
+  ].join("\r\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function finishRecording() {
+  if (!recording) return;
+
+  recording = false;
+  clearTimeout(recordingTimer);
+
+  recordBtn.disabled = false;
+  activityEl.disabled = false;
+  downloadBtn.disabled = samples.length === 0;
+
+  recordStatus.textContent =
+    `Recording complete: ${samples.length} samples.`;
+}
+
+function onMotion(event) {
+  const a = event.acceleration;
+  const r = event.rotationRate;
+
+  if (
+    !a ||
+    a.x == null ||
+    a.y == null ||
+    a.z == null
+  ) {
+    statusEl.textContent =
+      "Acceleration data unavailable on this device.";
+    return;
+  }
+
+  const now = performance.now();
+  lastEventTime = now;
+
+  const ax = a.x;
+  const ay = a.y;
+  const az = a.z;
+
+  const am = magnitude(ax, ay, az);
+
+  const alpha = r?.alpha ?? 0;
+  const beta = r?.beta ?? 0;
+  const gamma = r?.gamma ?? 0;
+
+  const rm = r &&
+    r.alpha != null &&
+    r.beta != null &&
+    r.gamma != null
+      ? magnitude(alpha, beta, gamma)
+      : null;
+
+  recent.push({ time: now, value: am });
+
+  recent = recent.filter(
+    item => now - item.time <= WINDOW_MS
+  );
+
+  const meanSquare = recent.reduce(
+    (sum, item) => sum + item.value ** 2, 0
+  ) / recent.length;
+
+  const rms = Math.sqrt(meanSquare);
+
+  accelEl.textContent = am.toFixed(3);
+  rotationEl.textContent =
+    rm === null ? "Unavailable" : rm.toFixed(3);
+  rmsEl.textContent = rms.toFixed(3);
+
+  statusEl.textContent = "Receiving motion data.";
+
+  if (recording) {
+    samples.push({
+      time_ms: Math.round(now - recordingStart),
+      activity: activityEl.value,
+      accel_x: ax,
+      accel_y: ay,
+      accel_z: az,
+      accel_magnitude: am,
+      rotation_alpha: r?.alpha ?? "",
+      rotation_beta: r?.beta ?? "",
+      rotation_gamma: r?.gamma ?? "",
+      rotation_magnitude: rm ?? "",
+      accel_rms_2s: rms
+    });
+  }
+}
+
+enableBtn.addEventListener("click", async () => {
+  if (!window.isSecureContext) {
+    statusEl.textContent =
+      "HTTPS is required for sensor access.";
+    return;
+  }
+
+  if (!("DeviceMotionEvent" in window)) {
+    statusEl.textContent =
+      "DeviceMotionEvent is not supported.";
+    return;
+  }
+
+  try {
+    if (
+      typeof DeviceMotionEvent.requestPermission ===
+      "function"
+    ) {
+      const permission =
+        await DeviceMotionEvent.requestPermission();
+
+      if (permission !== "granted") {
+        statusEl.textContent =
+          "Motion sensor permission denied.";
+        return;
+      }
+    }
+
+    if (!sensorEnabled) {
+      window.addEventListener(
+        "devicemotion", onMotion
+      );
+      sensorEnabled = true;
+    }
+
+    enableBtn.disabled = true;
+    recordBtn.disabled = false;
+
+    statusEl.textContent =
+      "Permission granted. Waiting for data...";
+
+  } catch (error) {
+    statusEl.textContent =
+      `Sensor error: ${error.message}`;
+  }
+});
+
+recordBtn.addEventListener("click", () => {
+  if (!sensorEnabled) return;
+
+  if (performance.now() - lastEventTime > 2000) {
+    recordStatus.textContent =
+      "No recent sensor data. Check Safari permissions.";
+    return;
+  }
+
+  samples = [];
+  recent = [];
+  recording = true;
+  recordingStart = performance.now();
+
+  recordBtn.disabled = true;
+  downloadBtn.disabled = true;
+  activityEl.disabled = true;
+
+  recordStatus.textContent =
+    "Recording for 15 seconds...";
+
+  recordingTimer = setTimeout(
+    finishRecording,
+    RECORD_MS
+  );
+});
+
+downloadBtn.addEventListener("click", () => {
+  downloadCSV(
+    samples,
+    `walktap_motion_${activityEl.value}.csv`
+  );
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && recording) {
+    finishRecording();
+    recordStatus.textContent =
+      "Recording stopped because the page was hidden. " +
+      "Discard this incomplete recording.";
+    downloadBtn.disabled = true;
+  }
+});
+</script>
+</body>
+</html>
