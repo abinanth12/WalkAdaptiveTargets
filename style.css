@@ -1,0 +1,128 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #17243b;
+}
+
+.app {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+header p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+label {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+select, button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+select {
+  background: white;
+  border: 1px solid #cbd5e1;
+}
+
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stats div {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+#gameArea {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#instruction {
+  text-align: center;
+  padding: 80px 20px;
+  color: #64748b;
+}
+
+.target {
+  position: absolute;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #1d4ed8;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.target:active {
+  background: #1d4ed8;
+}
+
+#status {
+  text-align: center;
+  min-height: 24px;
+  font-size: 14px;
+}
+
+#downloadBtn {
+  margin-top: 8px;
+}
+s
