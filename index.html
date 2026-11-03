@@ -1,55 +1,32 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Walk-Adaptive Targets</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WalkTap — HCI Study</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="app">
-    <header>
-      <h1>Walk-Adaptive Targets</h1>
-      <p>CSE 518 - Touchscreen Interaction Study</p>
-    </header>
-
-    <section class="controls">
-      <label for="mode">Interface Mode</label>
-      <select id="mode">
-        <option value="fixed">Fixed Targets</option>
-        <option value="adaptive">Adaptive Targets</option>
-      </select>
-
-      <label for="posture">Activity</label>
-      <select id="posture">
-        <option value="sitting">Sitting</option>
-        <option value="walking">Walking</option>
-      </select>
-
-      <button id="startBtn">Start Experiment</button>
-    </section>
-
-    <section class="stats">
-      <div>Trial: <strong id="trial">0/20</strong></div>
-      <div>Hits: <strong id="hits">0</strong></div>
-      <div>Misses: <strong id="misses">0</strong></div>
-      <div>Average: <strong id="avgTime">0 ms</strong></div>
-    </section>
-
-    <div id="gameArea" aria-label="Tap testing area">
-      <p id="instruction">
-        Select a mode and activity, then press Start.
-      </p>
-    </div>
-
-    <p id="status" role="status">Ready to begin.</p>
-
-    <button id="downloadBtn" disabled>
-      Download Results (CSV)
-    </button>
-  </main>
+<main class="app">
+  <header><h1>Walk-Adaptive Targets</h1><p>CSE 518 · Motion-aware touch study</p></header>
+  <section class="panel controls">
+    <label for="participant">Participant ID (no names)</label>
+    <input id="participant" value="pilot01" maxlength="32" autocomplete="off">
+    <label for="mode">Interface mode</label>
+    <select id="mode"><option value="fixed">Fixed (44 px)</option><option value="large">Always Large (72 px)</option><option value="adaptive">Sensor-Adaptive (44/72 px)</option></select>
+    <label for="activity">Actual activity (set by experimenter)</label>
+    <select id="activity"><option value="sitting">Sitting</option><option value="walking">Walking</option></select>
+    <button id="sensorBtn" type="button">Enable Motion Sensors</button>
+    <p id="sensorStatus" role="status">Sensors not enabled.</p>
+    <div class="readouts"><span>Detected: <strong id="detected">Unknown</strong></span><span>RMS: <strong id="rms">--</strong> m/s²</span></div>
+    <button id="startBtn" type="button">Start Block (3 practice + 20 recorded)</button>
+  </section>
+  <section class="panel stats"><span>Recorded: <strong id="trial">0/20</strong></span><span>Hits: <strong id="hits">0</strong></span><span>Misses: <strong id="misses">0</strong></span><span>Mean: <strong id="mean">--</strong></span></section>
+  <div id="gameArea" aria-label="Touch target test area"><p id="instruction">Choose a mode and activity, then start.</p></div>
+  <p id="status" role="status">Ready.</p>
+  <button id="downloadBtn" type="button" disabled>Download Block CSV</button>
+  <p class="footnote">Pilot prototype. Sensor state is an estimate, not ground truth. Do not look at the screen while walking outside a controlled, unobstructed study area.</p>
+</main>
 </body>
 </html>
