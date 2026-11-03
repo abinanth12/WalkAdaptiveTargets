@@ -9,7 +9,7 @@
 </head>
 <body>
 <main class="app">
-  <header><h1>Walk-Adaptive Targets</h1><p>CSE 518 · Motion-aware touch study</p></header>
+  <header><h1>Walk-Adaptive Targets</h1><p>CSE 518 · Controlled pilot v5</p></header>
   <section class="panel controls">
     <label for="participant">Participant ID (no names)</label>
     <input id="participant" value="pilot01" maxlength="32" autocomplete="off">
@@ -20,11 +20,12 @@
     <button id="sensorBtn" type="button">Enable Motion Sensors</button>
     <p id="sensorStatus" role="status">Sensors not enabled.</p>
     <div class="readouts"><span>Detected: <strong id="detected">Unknown</strong></span><span>RMS: <strong id="rms">--</strong> m/s²</span></div>
-    <button id="startBtn" type="button">Start Block (3 practice + 20 recorded)</button>
+    <button id="startBtn" type="button">Start Controlled Block (3 practice + 20 recorded)</button>
   </section>
   <section class="panel stats"><span>Recorded: <strong id="trial">0/20</strong></span><span>Hits: <strong id="hits">0</strong></span><span>Misses: <strong id="misses">0</strong></span><span>Mean: <strong id="mean">--</strong></span></section>
   <div id="gameArea" aria-label="Touch target test area"><p id="instruction">Choose a mode and activity, then start.</p></div>
   <p id="status" role="status">Ready.</p>
+  <p class="footnote">Target centers follow the same participant-specific sequence in every mode. Complete one block per condition; download each CSV before the next.</p>
   <button id="downloadBtn" type="button" disabled>Download Block CSV</button>
   <p class="footnote">Pilot prototype. Sensor state is an estimate, not ground truth. Do not look at the screen while walking outside a controlled, unobstructed study area.</p>
 </main>
